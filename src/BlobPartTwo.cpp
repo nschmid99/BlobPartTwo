@@ -1,12 +1,18 @@
+#include <opencv2/core/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/video/tracking.hpp>
+
 #include "cinder/app/App.h"
 #include "cinder/app/RendererGl.h"
 #include "cinder/gl/gl.h"
+
+#include "CinderOpenCV.h"
 
 using namespace ci;
 using namespace ci::app;
 using namespace std;
 
-class CinderProjectBaseApp : public App {
+class BlobPartTwo : public App {
   public:
 	void setup() override;
 	void mouseDown( MouseEvent event ) override;
@@ -14,21 +20,21 @@ class CinderProjectBaseApp : public App {
 	void draw() override;
 };
 
-void CinderProjectBaseApp::setup()
+void BlobPartTwo::setup()
 {
 }
 
-void CinderProjectBaseApp::mouseDown( MouseEvent event )
+void BlobPartTwo::mouseDown( MouseEvent event )
 {
 }
 
-void CinderProjectBaseApp::update()
+void BlobPartTwo::update()
 {
 }
 
-void CinderProjectBaseApp::draw()
+void BlobPartTwo::draw()
 {
 	gl::clear( Color( 0, 0, 0 ) ); 
 }
 
-CINDER_APP( CinderProjectBaseApp, RendererGl )
+CINDER_APP( BlobPartTwo, RendererGl )
