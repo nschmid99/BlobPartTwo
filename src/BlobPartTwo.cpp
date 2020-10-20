@@ -141,37 +141,39 @@ void BlobPartTwo::mouseUp( MouseEvent event){
     isMouseDown = false;
     
 }
+//
+//void BlobPartTwo::sendOSC(std::string addr, float x, float y) //sending the OSC values
+//{
+//    osc::Message msg;
+//    msg.setAddress(addr); //sets the address
+//    msg.append(x);
+//    msg.append(y);
+//    mSender.send(msg);
+//
+//
+//}
 
-void BlobPartTwo::sendOSC(std::string addr, float x, float y) //sending the OSC values
-{
-    osc::Message msg;
-    msg.setAddress(addr); //sets the address
-    msg.append(x);
-    msg.append(y);
-    mSender.send(msg);
-    
-
-}
-
+//send if mouse is down
 void BlobPartTwo::sendOSC(std::string addr, float down)
 {
     osc::Message msg;
     msg.setAddress(addr);
     msg.append(down);
     mSender.send(msg);
-    
+
 }
 
-void BlobPartTwo::sendOSC(std::string addr, float id, float xB, float yB)
-{
-    osc::Message msg;
-    msg.setAddress(addr); //sets the address
-    msg.append(id);
-    msg.append(xB);
-    msg.append(yB);
-    mSender.send(msg);
-       
-}
+//void BlobPartTwo::sendOSC(std::string addr, float id, float xB, float yB)
+//{
+//    osc::Message msg;
+//    msg.setAddress(addr); //sets the address
+//    msg.append(id);
+//    msg.append(xB);
+//    msg.append(yB);
+//    mSender.send(msg);
+//
+//}
+
 void BlobPartTwo::setup()
 {
     
@@ -328,10 +330,12 @@ void BlobPartTwo::update()
     
     //send the OSC re: mouse values
     //& normalize the positions to 0. to 1. for easy scaling in processing program
-   
-    sendOSC(WHERE_OSCADDRESS,(float)curMousePosLastDown.x/(float)getWindowWidth(),(float)curMousePosLastDown.y/(float)getWindowHeight());
     sendOSC(DOWN_OSC_ADDRESS, isMouseDown);
-   // sendOSC(BLOB_OSCADDRESS, float(newBlobID), float(Blob.x), <#float yB#>)
+//    sendOSC(WHERE_OSCADDRESS,(float)curMousePosLastDown.x/(float)getWindowWidth(),(float)curMousePosLastDown.y/(float)getWindowHeight());
+//
+//    for(int i=0; i<mKeyPoints.size();i++){
+//        sendOSC(BLOB_OSCADDRESS, float(newBlobID), float(mKeyPoints[i].pt.x), mKeyPoints[i].pt.y);
+//    }
 }
 
 void BlobPartTwo::createBlobs()
