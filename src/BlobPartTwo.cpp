@@ -325,7 +325,7 @@ void BlobPartTwo::update()
     updateBlobList();
     
     //create blob objects from keypoints
-    createBlobs();
+  //  createBlobs();
    
     
     //send the OSC re: mouse values
@@ -352,55 +352,115 @@ void BlobPartTwo::createBlobs()
 
 void BlobPartTwo::blobTracking(){
 
-    std::vector<int> mindist;
     
-    int min;
-    
-    //cycle through and check distance
-    for(int j=0; j<mKeyPoints.size(); j++)
-    {
-        mindist.clear();
-    for(int i=0; i<mPrevKeyPoints.size();i++)
-    {
-        //calculate distance
-        int d=ci::distance(fromOcv(mKeyPoints[i].pt), fromOcv(mPrevKeyPoints[j].pt));
-
-        //save distance to a vector
-        mindist.push_back(d);
-
-        //remove any false 0's
-        mindist.erase(std::remove(mindist.begin(),mindist.end(),0),mindist.end());
+     
+    int dist;
+    int saveI;
         
-        //find minimum distance
-        min=*min_element(mindist.begin(),mindist.end());
-        
-        // if minimum distance meets the threshold save the index to map
-        if(min<=minDist)
-            {
-                mMapPrevToCurKeypoints.push_back(i);
-                 std::cout<<"in thresh"<<i<<std::endl;
-            }
+        //check keypoints at first. for some reason only there when not calling mapPrevKeypoints.
+    std::cout << "mPrevKeyPointsBefore: "  ;
+    for(int k=0; k<mPrevKeyPoints.size(); k++)
+    {
 
-            //if minimum distance exceeds the threshold save -1 to map
-             if(min>minDist)
-            {
-                mMapPrevToCurKeypoints.push_back(-1);
-                std::cout<<"exceeds thresh"<<-1<<std::endl;
-            }
+        std::cout  << mPrevKeyPoints[k].pt.x << "," <<mPrevKeyPoints[k].pt.y << " ";
+
     }
 
 
+            
+
+    for(int i=0; i<mKeyPoints.size(); i++)
+    {
+        for(int j=0; j<mPrevKeyPoints.size();j++)
+        {
+            int x1= mKeyPoints[i].pt.x;
+            int x2=  mPrevKeyPoints[j].pt.x;
+            int y1= mKeyPoints[i].pt.y;
+            int y2=  mPrevKeyPoints[j].pt.y;
+
+            int xs=(x1-x2);
+            int ys=(y1-y2);
+            
+            dist=(sqrt((pow(xs, 2)-(pow(ys, 2)))));
+                    
+            if(dist<=minDist && dist>=0)
+            {
+                saveI=i;
+                std::cout<<"i  was saved"<<saveI<<std::endl;
+            }
+            else
+            {
+                saveI=-1;
+                std::cout<<"i  wasnt saved"<<saveI<<std::endl;
+            }
+       
+        }
+       
+                    
+               //   mMapPrevToCurKeypoints.push_back(saveI);
+                                          }
+
+      std::cout << "*********************\n";
+
+         
+        std::cout << "mMapPrevToCurKeypoints: " << mMapPrevToCurKeypoints.size() << std::endl ;
+
+         for(int i=0; i<mMapPrevToCurKeypoints.size(); i++){
+
+             std::cout <<mMapPrevToCurKeypoints[i] << "  ";
+
+         }
+
+         
+
+         std::cout << std::endl;
+
+         std::cout << "mKeyPoints: "  ;
+
+
+
+         for(int k=0; k<mKeyPoints.size(); k++){
+
+             std::cout <<mKeyPoints[k].pt.x << "," <<mKeyPoints[k].pt.y << "  ";
+
+         }
+
+         
+
+         std::cout << std::endl;
+
+         std::cout << "mPrevKeyPoints: "  ;
+
+         
+
+         for(int k=0; k<mPrevKeyPoints.size(); k++){
+
+             std::cout  << mPrevKeyPoints[k].pt.x << "," <<mPrevKeyPoints[k].pt.y << " ";
+
+         }
+
+         
+
+         std::cout << std::endl;
+
+         std::cout << " KeyPoints: " << mKeyPoints.size() << std::endl;
+
+         std::cout << " PrevKeyPoints: " << mPrevKeyPoints.size() << std::endl;
+
+
+
+         std::cout << "*********************\n";
+
+                      
     }
 
-    
-}
 
 void BlobPartTwo::updateBlobList()
 {
     //save blobs to previousblobs and clear it
     mPrevBlobs=mBlobs;
     mBlobs.clear();
-    newBlobID=0;
+  //  newBlobID=0;
     
     //cycle through map
     for(int i=0; i<mMapPrevToCurKeypoints.size(); i++)
@@ -420,7 +480,7 @@ void BlobPartTwo::updateBlobList()
         else
         {
             mPrevBlobs[ind].update( mKeyPoints[i]);
-            mBlobs.push_back(mPrevBlobs[mMapPrevToCurKeypoints[ind]]);
+            mBlobs.push_back(mPrevBlobs[ind]);
 
         }
 
