@@ -52,17 +52,20 @@
 #define WINDOW_WIDTH 640
 #define WINDOW_HEIGHT 480
 
-//for networking
-#define LOCALPORT 8887 //we just bind here to send.
-#define DESTHOST "127.0.0.1" //this is sending to our OWN computer's IP address
-#define DESTPORT 8888 //this is the port we are sending to -- take note. This will have to match in the next code.
-#define WHERE_OSCADDRESS "/MakeItArt/Where"
-#define DOWN_OSC_ADDRESS "/MakeItArt/Down"
-#define BLOB_OSCADDRESS "/MakeItArt/Blobs"
 
 using namespace ci;
 using namespace ci::app;
 using namespace std;
+
+//for networking
+#define LOCALPORT 8887 //we just bind here to send.
+#define DESTHOST "127.0.0.1" //this is sending to our OWN computer's IP address
+#define DESTPORT 8888 //this is the port we are sending to -- take note. This will have to match in the next code.
+
+//set up our OSC addresses
+#define WHERE_OSCADDRESS "/MakeItArt/Where"
+#define MOUSEDOWN_OSCADDRESS "/MakeItArt/Down"
+#define BLOB_OSCADDRESS "/MakeItArt/Blobs"
 
 class BlobPartTwo : public App {
 public:
@@ -115,15 +118,51 @@ protected:
 
     void blobTracking(); //finds distancec between blobs to track them
     void updateBlobList();//update blobs
+    void calculateVelocity();
     int newBlobID; //the id to assign a new blob.
-    int minDist =100;
+    int minDist =75;
 
     
 };
 
-BlobPartTwo::BlobPartTwo() : mSender(LOCALPORT, DESTHOST, DESTPORT) //initializing our class variables
+BlobPartTwo::BlobPartTwo(): mSender(LOCALPORT, DESTHOST, DESTPORT) //initializing our class variables
 {
 
+}
+
+void BlobPartTwo::sendOSC(std::string addr, float x, float y)
+{
+    
+       osc::Message msg;
+       msg.setAddress(addr); //sets the address
+
+    
+       msg.append(x);
+       msg.append(y);
+       mSender.send(msg);
+       
+}
+
+void BlobPartTwo::sendOSC(std::string addr, float down)
+{
+    
+    osc::Message msg;
+    msg.setAddress(addr); //sets the address
+    msg.append(down);
+    mSender.send(msg);
+       
+}
+
+void BlobPartTwo::sendOSC(std::string addr,float id, float blobX, float blobY)
+{
+    
+    osc::Message msg;
+    msg.setAddress(addr); //sets the address
+    msg.append(id);
+    msg.append(blobX);
+    msg.append(blobY);
+    mSender.send(msg);
+       
 }
 
 void BlobPartTwo::mouseDrag( MouseEvent event){
@@ -141,38 +180,6 @@ void BlobPartTwo::mouseUp( MouseEvent event){
     isMouseDown = false;
     
 }
-//
-//void BlobPartTwo::sendOSC(std::string addr, float x, float y) //sending the OSC values
-//{
-//    osc::Message msg;
-//    msg.setAddress(addr); //sets the address
-//    msg.append(x);
-//    msg.append(y);
-//    mSender.send(msg);
-//
-//
-//}
-
-//send if mouse is down
-void BlobPartTwo::sendOSC(std::string addr, float down)
-{
-    osc::Message msg;
-    msg.setAddress(addr);
-    msg.append(down);
-    mSender.send(msg);
-
-}
-
-//void BlobPartTwo::sendOSC(std::string addr, float id, float xB, float yB)
-//{
-//    osc::Message msg;
-//    msg.setAddress(addr); //sets the address
-//    msg.append(id);
-//    msg.append(xB);
-//    msg.append(yB);
-//    mSender.send(msg);
-//
-//}
 
 void BlobPartTwo::setup()
 {
@@ -322,57 +329,38 @@ void BlobPartTwo::update()
     //update all our blob info
     blobDetection(mUseBackgroundSubtraction);
     blobTracking();
+    calculateVelocity();
     updateBlobList();
     
-    //create blob objects from keypoints
-  //  createBlobs();
-   
     
-    //send the OSC re: mouse values
-    //& normalize the positions to 0. to 1. for easy scaling in processing program
-    sendOSC(DOWN_OSC_ADDRESS, isMouseDown);
-//    sendOSC(WHERE_OSCADDRESS,(float)curMousePosLastDown.x/(float)getWindowWidth(),(float)curMousePosLastDown.y/(float)getWindowHeight());
-//
-//    for(int i=0; i<mKeyPoints.size();i++){
-//        sendOSC(BLOB_OSCADDRESS, float(newBlobID), float(mKeyPoints[i].pt.x), mKeyPoints[i].pt.y);
-//    }
+    //send OSC
+    sendOSC(WHERE_OSCADDRESS,  (float)curMousePosLastDown.x/(float)getWindowWidth(),(float)curMousePosLastDown.y/(float)getWindowHeight());
+    sendOSC(MOUSEDOWN_OSCADDRESS, isMouseDown);
+    for(int i=0; i<mKeyPoints.size();i++){
+        sendOSC(BLOB_OSCADDRESS, newBlobID, mKeyPoints[i].pt.x,mKeyPoints[i].pt.y);}
+    
+    
 }
 
-void BlobPartTwo::createBlobs()
-{
-    mBlobs.clear(); //create a new list of blobs each time
-  
-    for(int i=0; i<mKeyPoints.size(); i++)
-    {
-        mBlobs.push_back(Blob(mKeyPoints[i], newBlobID));
-        newBlobID++;
-    }
 
-}
 
 void BlobPartTwo::blobTracking(){
-
     
-     
+    //initialize and clear
     int dist;
-    int saveI;
-        
-        //check keypoints at first. for some reason only there when not calling mapPrevKeypoints.
-    std::cout << "mPrevKeyPointsBefore: "  ;
-    for(int k=0; k<mPrevKeyPoints.size(); k++)
-    {
-
-        std::cout  << mPrevKeyPoints[k].pt.x << "," <<mPrevKeyPoints[k].pt.y << " ";
-
-    }
-
-
-            
-
+    int saveI=-1;
+    mMapPrevToCurKeypoints.clear();
+              
+           
+  //cycle through mKeypoints and check against mPrevKeypoints to find minimum distance
     for(int i=0; i<mKeyPoints.size(); i++)
     {
+        minDist=75;
+        saveI=-1;
+
         for(int j=0; j<mPrevKeyPoints.size();j++)
         {
+            
             int x1= mKeyPoints[i].pt.x;
             int x2=  mPrevKeyPoints[j].pt.x;
             int y1= mKeyPoints[i].pt.y;
@@ -380,79 +368,26 @@ void BlobPartTwo::blobTracking(){
 
             int xs=(x1-x2);
             int ys=(y1-y2);
-            
+                  
+            //calculate distance
             dist=(sqrt((pow(xs, 2)-(pow(ys, 2)))));
-                    
-            if(dist<=minDist && dist>=0)
+                            
+            //if distance meets minimum threshold
+            if(dist<=minDist)
             {
-                saveI=i;
-                std::cout<<"i  was saved"<<saveI<<std::endl;
+                minDist=dist;
+                saveI=j;
             }
-            else
-            {
-                saveI=-1;
-                std::cout<<"i  wasnt saved"<<saveI<<std::endl;
-            }
-       
+
+             
         }
-       
-                    
-               //   mMapPrevToCurKeypoints.push_back(saveI);
-                                          }
-
-      std::cout << "*********************\n";
-
-         
-        std::cout << "mMapPrevToCurKeypoints: " << mMapPrevToCurKeypoints.size() << std::endl ;
-
-         for(int i=0; i<mMapPrevToCurKeypoints.size(); i++){
-
-             std::cout <<mMapPrevToCurKeypoints[i] << "  ";
-
-         }
-
-         
-
-         std::cout << std::endl;
-
-         std::cout << "mKeyPoints: "  ;
-
-
-
-         for(int k=0; k<mKeyPoints.size(); k++){
-
-             std::cout <<mKeyPoints[k].pt.x << "," <<mKeyPoints[k].pt.y << "  ";
-
-         }
-
-         
-
-         std::cout << std::endl;
-
-         std::cout << "mPrevKeyPoints: "  ;
-
-         
-
-         for(int k=0; k<mPrevKeyPoints.size(); k++){
-
-             std::cout  << mPrevKeyPoints[k].pt.x << "," <<mPrevKeyPoints[k].pt.y << " ";
-
-         }
-
-         
-
-         std::cout << std::endl;
-
-         std::cout << " KeyPoints: " << mKeyPoints.size() << std::endl;
-
-         std::cout << " PrevKeyPoints: " << mPrevKeyPoints.size() << std::endl;
-
-
-
-         std::cout << "*********************\n";
-
-                      
+             
+        //save keypoints
+        mMapPrevToCurKeypoints.push_back(saveI);
+        
     }
+
+ }
 
 
 void BlobPartTwo::updateBlobList()
@@ -460,7 +395,7 @@ void BlobPartTwo::updateBlobList()
     //save blobs to previousblobs and clear it
     mPrevBlobs=mBlobs;
     mBlobs.clear();
-  //  newBlobID=0;
+
     
     //cycle through map
     for(int i=0; i<mMapPrevToCurKeypoints.size(); i++)
@@ -479,6 +414,7 @@ void BlobPartTwo::updateBlobList()
         //if not, uppdate blob keypoints
         else
         {
+           
             mPrevBlobs[ind].update( mKeyPoints[i]);
             mBlobs.push_back(mPrevBlobs[ind]);
 
@@ -487,6 +423,53 @@ void BlobPartTwo::updateBlobList()
     }
     
 
+}
+
+void BlobPartTwo::calculateVelocity(){
+//    std::cout << std::endl;
+//    std::cout << "mBlobs: "  ;
+
+//    for(int k=0; k<mBlobs.size(); k++){
+//        std::cout <<Blob(mKeyPoints[i].pt.x) << "," <<mBlobs[k].pt.y << "  ";
+//    }
+    
+//  check if blob exists in previous frame and this frame
+    int velocity;
+    for(int i=0; i<mMapPrevToCurKeypoints.size(); i++)
+   
+    {
+        velocity=0;
+        //find value at location i of map
+       int ind=mMapPrevToCurKeypoints[i];
+        
+        //if value is -1, calculate velocity
+        if(ind!=-1)
+        {
+           
+            int x1= mKeyPoints[i].pt.x;
+            int x2=  mPrevKeyPoints[i].pt.x;
+            int y1= mKeyPoints[i].pt.y;
+            int y2=  mPrevKeyPoints[i].pt.y;
+
+            int xs=(x1-x2);
+            int ys=(y1-y2);
+                  
+            //calculate distance
+             velocity=(sqrt((pow(xs, 2)-(pow(ys, 2)))));
+            
+            std::cout<<"prevkeypoint at i"<<x1<<","<<y1<<std::endl;
+                                  std::cout<<"keypoint at i"<<x2<<","<<y2<<std::endl;
+            std::cout<<"velocity"<<velocity<<std::endl;
+          
+        }
+        
+         std::cout<<"end"<<std::endl;
+        
+
+    }
+    
+
+    
 }
 
 void BlobPartTwo::draw()
