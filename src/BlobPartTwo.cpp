@@ -66,6 +66,7 @@ using namespace std;
 #define WHERE_OSCADDRESS "/MakeItArt/Where"
 #define MOUSEDOWN_OSCADDRESS "/MakeItArt/Down"
 #define BLOB_OSCADDRESS "/MakeItArt/Blobs"
+#define COLOR_OSCADDRESS "/MakeItArt/Color"
 
 class BlobPartTwo : public App {
 public:
@@ -121,6 +122,7 @@ protected:
     void calculateVelocity();
     int newBlobID; //the id to assign a new blob.
     int minDist =75;
+    int velocity;
 
     
 };
@@ -143,12 +145,12 @@ void BlobPartTwo::sendOSC(std::string addr, float x, float y)
        
 }
 
-void BlobPartTwo::sendOSC(std::string addr, float down)
+void BlobPartTwo::sendOSC(std::string addr, float cChange)
 {
     
     osc::Message msg;
     msg.setAddress(addr); //sets the address
-    msg.append(down);
+    msg.append(cChange);
     mSender.send(msg);
        
 }
@@ -164,6 +166,7 @@ void BlobPartTwo::sendOSC(std::string addr,float id, float blobX, float blobY)
     mSender.send(msg);
        
 }
+
 
 void BlobPartTwo::mouseDrag( MouseEvent event){
     curMousePosLastDown = event.getPos();
@@ -334,8 +337,8 @@ void BlobPartTwo::update()
     
     
     //send OSC
-    sendOSC(WHERE_OSCADDRESS,  (float)curMousePosLastDown.x/(float)getWindowWidth(),(float)curMousePosLastDown.y/(float)getWindowHeight());
-    sendOSC(MOUSEDOWN_OSCADDRESS, isMouseDown);
+   // sendOSC(WHERE_OSCADDRESS,  (float)curMousePosLastDown.x/(float)getWindowWidth(),(float)curMousePosLastDown.y/(float)getWindowHeight());
+    sendOSC(COLOR_OSCADDRESS, velocity);
     for(int i=0; i<mKeyPoints.size();i++){
         sendOSC(BLOB_OSCADDRESS, newBlobID, mKeyPoints[i].pt.x,mKeyPoints[i].pt.y);}
     
@@ -426,15 +429,8 @@ void BlobPartTwo::updateBlobList()
 }
 
 void BlobPartTwo::calculateVelocity(){
-//    std::cout << std::endl;
-//    std::cout << "mBlobs: "  ;
 
-//    for(int k=0; k<mBlobs.size(); k++){
-//        std::cout <<Blob(mKeyPoints[i].pt.x) << "," <<mBlobs[k].pt.y << "  ";
-//    }
-    
-//  check if blob exists in previous frame and this frame
-    int velocity;
+  
     for(int i=0; i<mMapPrevToCurKeypoints.size(); i++)
    
     {
@@ -454,8 +450,8 @@ void BlobPartTwo::calculateVelocity(){
             int xs=(x1-x2);
             int ys=(y1-y2);
                   
-            //calculate distance
-             velocity=(sqrt((pow(xs, 2)-(pow(ys, 2)))));
+            //calculate velocity
+            velocity=(sqrt((pow(xs, 2)+(pow(ys, 2)))));
             
             std::cout<<"prevkeypoint at i"<<x1<<","<<y1<<std::endl;
                                   std::cout<<"keypoint at i"<<x2<<","<<y2<<std::endl;
