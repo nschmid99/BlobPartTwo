@@ -63,8 +63,8 @@ using namespace std;
 #define DESTPORT 8888 //this is the port we are sending to -- take note. This will have to match in the next code.
 
 //set up our OSC addresses
-#define WHERE_OSCADDRESS "/MakeItArt/Where"
-#define MOUSEDOWN_OSCADDRESS "/MakeItArt/Down"
+//#define WHERE_OSCADDRESS "/MakeItArt/Where"
+#define GLOW_OSCADDRESS "/MakeItArt/Glow"
 #define BLOB_OSCADDRESS "/MakeItArt/Blobs"
 #define COLOR_OSCADDRESS "/MakeItArt/Color"
 
@@ -106,8 +106,8 @@ protected:
     
     //Sending OSC
     osc::SenderUdp                mSender; //sends the OSC via the UDP protocol
-    void sendOSC(std::string addr, float x, float y); //sending the OSC values
-    void sendOSC(std::string addr, float down); //sending the OSC values
+    void sendOSC(std::string addr, float cChange); //sending the OSC values
+    void sendOSC(std::string addr, float totalSize, float cn); //sending the OSC values
     void sendOSC(std::string addr, float id, float xB, float yB);
     
     
@@ -132,15 +132,14 @@ BlobPartTwo::BlobPartTwo(): mSender(LOCALPORT, DESTHOST, DESTPORT) //initializin
 
 }
 
-void BlobPartTwo::sendOSC(std::string addr, float x, float y)
+void BlobPartTwo::sendOSC(std::string addr, float totalSize, float cn)
 {
     
        osc::Message msg;
        msg.setAddress(addr); //sets the address
-
-    
-       msg.append(x);
-       msg.append(y);
+     msg.append(totalSize);
+        msg.append(cn);//just a fake value
+      
        mSender.send(msg);
        
 }
@@ -287,8 +286,8 @@ void BlobPartTwo::blobDetection(BackgroundSubtractionState useBackground = Backg
             cv::Mat outFrame;
             
             //use frame-differencing to subtract the background
-            cv::GaussianBlur(mCurFrame, outFrame, cv::Size(11,11), 0);
-            cv::GaussianBlur(mSavedFrame, mBackgroundSubtracted, cv::Size(11,11), 0);
+            cv::GaussianBlur(mCurFrame, outFrame, cv::Size(21,21), 0);
+            cv::GaussianBlur(mSavedFrame, mBackgroundSubtracted, cv::Size(21,21), 0);
             cv::absdiff(outFrame, mBackgroundSubtracted, mBackgroundSubtracted);
             
             cv::threshold(mBackgroundSubtracted, mBackgroundSubtracted, 25, 255, cv::THRESH_BINARY);
@@ -337,7 +336,8 @@ void BlobPartTwo::update()
     
     
     //send OSC
-   // sendOSC(WHERE_OSCADDRESS,  (float)curMousePosLastDown.x/(float)getWindowWidth(),(float)curMousePosLastDown.y/(float)getWindowHeight());
+//if((float)mKeyPoints.size()>0){
+        sendOSC(GLOW_OSCADDRESS,  (float)mKeyPoints.size(),(float)mKeyPoints.size());//}
     sendOSC(COLOR_OSCADDRESS, velocity);
     for(int i=0; i<mKeyPoints.size();i++){
         sendOSC(BLOB_OSCADDRESS, newBlobID, mKeyPoints[i].pt.x,mKeyPoints[i].pt.y);}
