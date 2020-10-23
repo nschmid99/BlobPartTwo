@@ -71,9 +71,6 @@ using namespace std;
 class BlobPartTwo : public App {
 public:
     void setup() override;
-    void mouseDown( MouseEvent event ) override;
-    void mouseDrag( MouseEvent event) override;
-    void mouseUp( MouseEvent event) override;
     void keyDown( KeyEvent event ) override;
     
     void update() override;
@@ -81,8 +78,7 @@ public:
     
     BlobPartTwo();
     
-    ci::vec2 curMousePosLastDown;
-    bool isMouseDown;
+   
     
 protected:
     CaptureRef                 mCapture; //the camera capture object
@@ -107,7 +103,7 @@ protected:
     //Sending OSC
     osc::SenderUdp                mSender; //sends the OSC via the UDP protocol
     void sendOSC(std::string addr, float cChange); //sending the OSC values
-    void sendOSC(std::string addr, float totalSize, float cn); //sending the OSC values
+    void sendOSC(std::string addr, float totalSize, float cn);
     void sendOSC(std::string addr, float id, float xB, float yB);
     
     
@@ -119,9 +115,9 @@ protected:
 
     void blobTracking(); //finds distancec between blobs to track them
     void updateBlobList();//update blobs
-    void calculateVelocity();
+    void calculateVelocity();   //calculate velocity
     int newBlobID; //the id to assign a new blob.
-    int minDist =75;
+    int minDist =75; //distance threshold
     int velocity;
 
     
@@ -135,12 +131,11 @@ BlobPartTwo::BlobPartTwo(): mSender(LOCALPORT, DESTHOST, DESTPORT) //initializin
 void BlobPartTwo::sendOSC(std::string addr, float totalSize, float cn)
 {
     
-       osc::Message msg;
-       msg.setAddress(addr); //sets the address
-     msg.append(totalSize);
-        msg.append(cn);//just a fake value
-      
-       mSender.send(msg);
+    osc::Message msg;
+    msg.setAddress(addr); //sets the address
+    msg.append(totalSize);  //size of mKeypoints
+    msg.append(cn);//just a fake value
+    mSender.send(msg);
        
 }
 
@@ -149,7 +144,7 @@ void BlobPartTwo::sendOSC(std::string addr, float cChange)
     
     osc::Message msg;
     msg.setAddress(addr); //sets the address
-    msg.append(cChange);
+    msg.append(cChange);    //affects color change
     mSender.send(msg);
        
 }
@@ -160,28 +155,13 @@ void BlobPartTwo::sendOSC(std::string addr,float id, float blobX, float blobY)
     osc::Message msg;
     msg.setAddress(addr); //sets the address
     msg.append(id);
-    msg.append(blobX);
-    msg.append(blobY);
+    msg.append(blobX);  //sends blob x pos
+    msg.append(blobY);  //sends blob y pos
     mSender.send(msg);
        
 }
 
 
-void BlobPartTwo::mouseDrag( MouseEvent event){
-    curMousePosLastDown = event.getPos();
-    isMouseDown = true;
-    
-}
-void BlobPartTwo::mouseDown( MouseEvent event){
-    curMousePosLastDown = event.getPos();
-    isMouseDown = true;
-
-}//sets the mouse up values
-
-void BlobPartTwo::mouseUp( MouseEvent event){
-    isMouseDown = false;
-    
-}
 
 void BlobPartTwo::setup()
 {
@@ -336,8 +316,7 @@ void BlobPartTwo::update()
     
     
     //send OSC
-//if((float)mKeyPoints.size()>0){
-        sendOSC(GLOW_OSCADDRESS,  (float)mKeyPoints.size(),(float)mKeyPoints.size());//}
+    sendOSC(GLOW_OSCADDRESS,  (float)mKeyPoints.size(),(float)mKeyPoints.size());
     sendOSC(COLOR_OSCADDRESS, velocity);
     for(int i=0; i<mKeyPoints.size();i++){
         sendOSC(BLOB_OSCADDRESS, newBlobID, mKeyPoints[i].pt.x,mKeyPoints[i].pt.y);}
@@ -452,14 +431,10 @@ void BlobPartTwo::calculateVelocity(){
                   
             //calculate velocity
             velocity=(sqrt((pow(xs, 2)+(pow(ys, 2)))));
-            
-            std::cout<<"prevkeypoint at i"<<x1<<","<<y1<<std::endl;
-                                  std::cout<<"keypoint at i"<<x2<<","<<y2<<std::endl;
-            std::cout<<"velocity"<<velocity<<std::endl;
+        
           
         }
         
-         std::cout<<"end"<<std::endl;
         
 
     }
